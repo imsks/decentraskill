@@ -45,7 +45,9 @@ contract Decentraskill {
         bool is_approved;
     }
 
-    // function sign_up() {
+    function sign_up(string calldata email, string calldata name, string calldata acc_type) public {
+        require(email_to_address[email] == address(0), 'Error: user already exists');
 
-    // }
+        email_to_address[email] = msg.sender;
+    }
 }
