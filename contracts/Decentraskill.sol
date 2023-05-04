@@ -28,12 +28,13 @@ contract Decentraskill {
     struct user {
         uint256 id;
         uint256 company_id;
+        string name;
         address wallet_address;
         bool is_employed;
         bool is_manager;
         uint256 num_skills;
-        uint256 skills;
-        uint256 work_experience;
+        uint256[] user_skills;
+        uint256[] work_experience;
     }
 
     struct experience {
@@ -45,6 +46,29 @@ contract Decentraskill {
         bool is_approved;
     }
 
+    struct certificate {
+        uint256 id;
+        string url;
+        string issue_date;
+        string valid_till;
+        string name;
+        string issuer;
+    }
+
+    struct endorsment {
+        uint256 endorser_id;
+        string date;
+        string comment;
+    }
+
+    struct skill {
+        uint256 id;
+        string name;
+        bool isVerified;
+        uint256[] skill_certifications;
+        uint256[] skill_endorsements;
+    }
+
     // Compare the hash
     function memcmp(bytes memory a, bytes memory b) internal pure returns(bool) {
         return (a.length == b.length) && (keccak256(a) == keccak256(b));
@@ -52,7 +76,7 @@ contract Decentraskill {
 
     // Compare the strings
     function strcmp(string memory a, string memory b) internal pure returns(bool) { 
-        return memcmp(bytes(a), bytes(a));
+        return memcmp(bytes(a), bytes(b));
     }
 
     // Signup user
@@ -68,7 +92,7 @@ contract Decentraskill {
             new_user.name = name;
             new_user.wallet_address = msg.sender;
             new_user.user_skills = new uint256[](0);
-            new_user.user_work_experience = new uint256[](0);
+            new_user.work_experience = new uint256[](0);
         } else if(strcmp(acc_type, 'company')) {
             company storage new_company = companies.push();
             new_company.name = name;
@@ -84,6 +108,22 @@ contract Decentraskill {
     // Login user
     function login(string calldata email) public view returns(string memory) {
         require(msg.sender == email_to_address[email], 'Error: Incorrect ');
-        return (is_company[msg.sender]) ? "company" : "user";
+        return is_company[msg.sender] ? "company" : "user";
+    }
+
+    // Update wallet  address
+    function update_wallet_address(string calldata email, address new_address) external {
+        require(email_to_address[email] == msg.sender, "Error: Function called from incorrect wallet address");
+
+        email_to_address[email] = new_address;
+        uint256 id = address_to_id[msg.sender];
+        address_to_id[msg.sender] = 0;
+        address_to_id[new_address] = id;
+    }
+
+    // Check if verified user
+    modifier verifiedUser(uint256 user_id) {
+        require(user_id == address_to_id[msg.sender]);
+        _;
     }
 }
