@@ -15,6 +15,15 @@ contract Decentraskill {
     mapping(address => uint256) public address_to_id;
     mapping(address => bool) public is_company;
 
+    construtor() {
+        user storage dummy_user = employees.push();
+        dummy_user.name = "dummy";
+        dummy_user.wallet_address = msg.sender;
+        dummy_user.id = 0;
+        dummy_user.user_skills = new uint256[](0);
+        dummy_user.user_work_experience = new uint256[](0);
+    }
+
     // Structure Declarations
     struct company {
         uint256 id;
@@ -125,5 +134,123 @@ contract Decentraskill {
     modifier verifiedUser(uint256 user_id) {
         require(user_id == address_to_id[msg.sender]);
         _;
+    }
+
+    // Add experience
+    function add_experience(uint256 user_id,
+        string calldata starting_date,
+        string calldata ending_date,
+        uint256 company_id) 
+        public verifiedUser(user_id) {
+        experince storage new_experience = experiences.push();
+        new_experience.company_id = company_id;
+        new_experience.is_approved = false;
+        new_experience.starting_date = starting_date;
+        new_experience.ending_date = ending_date;
+        new_experience.role = role;
+        employees[user_id].work_experience.push(experinces.length - 1);
+        companies[company_id].requested_employees.push(experinces.length - 1);
+    }
+
+    // Approve experience
+    function approve_experience(
+        uint256 experience_id,
+        uint256 company_id
+    ) public {
+        require(
+        (is_company[msg.sender] &&
+        companies[address_to_id[msg.sender]].id == experiences[experience_id].company_id) ||
+        (employees[address_to_id[msg.sender]].is_manager &&
+        employees[address_to_id[msg.sender]].company_id == experiences[experience_id].company_id), "Error: Approver should be the company or manager"
+        )
+
+        uint256 i;
+        experiences[exp_id].is_approved = true;
+
+        // Remove item from Requested
+        for (i = 0; i < companies[company_id].requested_employees.length; i++) {
+            if (companies[company_id].requested_employees[i] == exp_id) {
+                companies[company_id].requested_employees[i] = 0;
+                break;
+            }
+        }
+
+        // Add item in Approved
+        for (i = 0; i < companies[company_id].current_employees.length; i++) {
+            if (companies[company_id].current_employees[i] == 0) {
+                companies[company_id].requested_employees[i] = exp_id;
+                break;
+            }
+        }
+
+
+        if (i == companies[company_id].current_employees.length)
+        companies[company_id].current_employees.push(exp_id);
+    }
+
+    // Approve manager
+    function approve_manager(uint256 employee_id) public {
+		require(is_company[msg.sender], "error: sender not a company account");
+        require(
+            employees[employee_id].company_id == address_to_id[msg.sender],
+            "error: user not of the same company"
+        );
+        require(
+            !(employees[employee_id].is_manager),
+            "error: user is already a manager"
+        );
+        employees[employee_id].is_manager = true;
+    }
+
+    // Add skill
+    function add_skill(uint256 userid, string calldata skill_name) public verifiedUser(userid) {
+        skill storage new_skill = skills.push();
+        employees[userid].user_skills.push(skills.length - 1);
+        new_skill.name = skill_name;
+        new_skill.verified = false;
+        new_skill.skill_certifications = new uint256[](0);
+        new_skill.skill_endorsements = new uint256[](0);
+    }
+
+    // Add certification
+    function add_certification(
+        uint256 user_id,
+        string calldata url,
+        string calldata issue_date,
+        string calldata valid_till,
+        string calldata name,
+        string calldata issuer,
+        uint256 linked_skill_id
+    ) public verifiedUser(user_id) {
+        certificate storage new_certificate = certifications.push();
+        new_certificate.url = url;
+        new_certificate.issue_date = issue_date;
+        new_certificate.valid_till = valid_till;
+        new_certificate.name = name;
+        new_certificate.id = certifications.length - 1;
+        new_certificate.issuer = issuer;
+        skills[linked_skill_id].skill_certifications.push(new_certificate.id);
+    }
+
+    // Endorse skill
+    function endorse_skill(
+        uint256 user_id,
+        uint256 skill_id,
+        string calldata endorsing_date,
+        string calldata comment
+    ) public {
+        endorsment storage new_endorsemnt = endorsments.push();
+        new_endorsemnt.endorser_id = address_to_id[msg.sender];
+        new_endorsemnt.comment = comment;
+        new_endorsemnt.date = endorsing_date;
+        skills[skill_id].skill_endorsements.push(endorsments.length - 1);
+        if (employees[address_to_id[msg.sender]].is_manager) {
+            if (
+                employees[address_to_id[msg.sender]].company_id ==
+                employees[user_id].company_id
+            ) {
+                skills[skill_id].verified = true;
+            }
+        }
     }
 }
