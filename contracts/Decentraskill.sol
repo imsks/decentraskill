@@ -15,13 +15,13 @@ contract Decentraskill {
     mapping(address => uint256) public address_to_id;
     mapping(address => bool) public is_company;
 
-    construtor() {
+    constructor() {
         user storage dummy_user = employees.push();
         dummy_user.name = "dummy";
         dummy_user.wallet_address = msg.sender;
         dummy_user.id = 0;
         dummy_user.user_skills = new uint256[](0);
-        dummy_user.user_work_experience = new uint256[](0);
+        dummy_user.work_experience = new uint256[](0);
     }
 
     // Structure Declarations
@@ -73,7 +73,7 @@ contract Decentraskill {
     struct skill {
         uint256 id;
         string name;
-        bool isVerified;
+        bool verified;
         uint256[] skill_certifications;
         uint256[] skill_endorsements;
     }
@@ -89,7 +89,7 @@ contract Decentraskill {
     }
 
     // Signup user
-    function sign_up(string calldata email, string calldata name, string calldata acc_type) public {
+    function sign_up(string memory email, string memory name, string memory acc_type) public {
         require(email_to_address[email] == address(0), 'Error: user already exists');
 
         email_to_address[email] = msg.sender;
@@ -115,13 +115,13 @@ contract Decentraskill {
     }
 
     // Login user
-    function login(string calldata email) public view returns(string memory) {
+    function login(string memory email) public view returns(string memory) {
         require(msg.sender == email_to_address[email], 'Error: Incorrect ');
         return is_company[msg.sender] ? "company" : "user";
     }
 
     // Update wallet  address
-    function update_wallet_address(string calldata email, address new_address) external {
+    function update_wallet_address(string memory email, address new_address) external {
         require(email_to_address[email] == msg.sender, "Error: Function called from incorrect wallet address");
 
         email_to_address[email] = new_address;
@@ -138,18 +138,19 @@ contract Decentraskill {
 
     // Add experience
     function add_experience(uint256 user_id,
-        string calldata starting_date,
-        string calldata ending_date,
+        string memory role,
+        string memory starting_date,
+        string memory ending_date,
         uint256 company_id) 
         public verifiedUser(user_id) {
-        experince storage new_experience = experiences.push();
+        experience storage new_experience = experiences.push();
         new_experience.company_id = company_id;
         new_experience.is_approved = false;
         new_experience.starting_date = starting_date;
         new_experience.ending_date = ending_date;
         new_experience.role = role;
-        employees[user_id].work_experience.push(experinces.length - 1);
-        companies[company_id].requested_employees.push(experinces.length - 1);
+        employees[user_id].work_experience.push(experiences.length - 1);
+        companies[company_id].requested_employees.push(experiences.length - 1);
     }
 
     // Approve experience
@@ -162,14 +163,14 @@ contract Decentraskill {
         companies[address_to_id[msg.sender]].id == experiences[experience_id].company_id) ||
         (employees[address_to_id[msg.sender]].is_manager &&
         employees[address_to_id[msg.sender]].company_id == experiences[experience_id].company_id), "Error: Approver should be the company or manager"
-        )
+        );
 
         uint256 i;
-        experiences[exp_id].is_approved = true;
+        experiences[experience_id].is_approved = true;
 
         // Remove item from Requested
         for (i = 0; i < companies[company_id].requested_employees.length; i++) {
-            if (companies[company_id].requested_employees[i] == exp_id) {
+            if (companies[company_id].requested_employees[i] == experience_id) {
                 companies[company_id].requested_employees[i] = 0;
                 break;
             }
@@ -178,14 +179,14 @@ contract Decentraskill {
         // Add item in Approved
         for (i = 0; i < companies[company_id].current_employees.length; i++) {
             if (companies[company_id].current_employees[i] == 0) {
-                companies[company_id].requested_employees[i] = exp_id;
+                companies[company_id].requested_employees[i] = experience_id;
                 break;
             }
         }
 
 
         if (i == companies[company_id].current_employees.length)
-        companies[company_id].current_employees.push(exp_id);
+        companies[company_id].current_employees.push(experience_id);
     }
 
     // Approve manager
@@ -203,7 +204,7 @@ contract Decentraskill {
     }
 
     // Add skill
-    function add_skill(uint256 userid, string calldata skill_name) public verifiedUser(userid) {
+    function add_skill(uint256 userid, string memory skill_name) public verifiedUser(userid) {
         skill storage new_skill = skills.push();
         employees[userid].user_skills.push(skills.length - 1);
         new_skill.name = skill_name;
@@ -215,11 +216,11 @@ contract Decentraskill {
     // Add certification
     function add_certification(
         uint256 user_id,
-        string calldata url,
-        string calldata issue_date,
-        string calldata valid_till,
-        string calldata name,
-        string calldata issuer,
+        string memory url,
+        string memory issue_date,
+        string memory valid_till,
+        string memory name,
+        string memory issuer,
         uint256 linked_skill_id
     ) public verifiedUser(user_id) {
         certificate storage new_certificate = certifications.push();
@@ -236,8 +237,8 @@ contract Decentraskill {
     function endorse_skill(
         uint256 user_id,
         uint256 skill_id,
-        string calldata endorsing_date,
-        string calldata comment
+        string memory endorsing_date,
+        string memory comment
     ) public {
         endorsment storage new_endorsemnt = endorsments.push();
         new_endorsemnt.endorser_id = address_to_id[msg.sender];
